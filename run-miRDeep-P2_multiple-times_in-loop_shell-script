@@ -1,0 +1,31 @@
+#An shell script file to run miRDeep-P2 multiple times in loop.
+dir=miRDeep-P2-Run
+reads=Input-file
+list=Predicted-ids
+
+# to run for 15 times with same data at 10 different RPM thresholds. change "15" as per your needs
+for x in $(seq 1 15)
+do
+   	mkdir "$dir-$x-1RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 1 -p 28 -o "$dir-$x-1RPM"
+   	mkdir "$dir-$x-2RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 2 -p 28 -o "$dir-$x-2RPM"
+   	mkdir "$dir-$x-3RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 3 -p 28 -o "$dir-$x-3RPM"
+   	mkdir "$dir-$x-4RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 4 -p 28 -o "$dir-$x-4RPM"
+   	mkdir "$dir-$x-5RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 5 -p 28 -o "$dir-$x-5RPM"
+   	mkdir "$dir-$x-6RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 6 -p 28 -o "$dir-$x-6RPM"
+   	mkdir "$dir-$x-7RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 7 -p 28 -o "$dir-$x-7RPM"
+   	mkdir "$dir-$x-8RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 8 -p 28 -o "$dir-$x-8RPM"
+   	mkdir "$dir-$x-9RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 9 -p 28 -o "$dir-$x-9RPM"
+   	mkdir "$dir-$x-10RPM" | bash ./1.1.4/miRDP2-v1.1.4_pipeline.bash -g ./Reference-genome.fa -x ./Reference-genome -f -i ./"$reads-$x".fasta -L 18 -R 10 -p 28 -o "$dir-$x-10RPM"
+
+#Merge all "..filter_P_prediction" outputs
+   	cat ./*/"$reads-$x"/"$reads-$x"_filter_P_prediction > "$reads-$x"_filter_P_prediction_1-10RPM.txt
+
+#Extract out the ids of reads which are predicted as miRNAs
+   	awk -F'\t' '{print $3}' "$reads-$x"_filter_P_prediction_1-10RPM.txt > "$list-$x".txt
+
+#Prepare a new fasta input of reads by removing reads which were predicted as miRNAs
+	awk '{ if ((NR>1)&&($0~/^>/)) { printf("\n%s", $0); } else if (NR==1) { printf("%s", $0); } else { printf("\t%s", $0); } }' ./"$reads-$x".fasta | grep -v -Ff "$list-$x".txt - | tr "\t" "\n" > ./"$reads-$(($x+1))".fasta
+   sleep 2
+done
+
+#After every batch of 10-15 run, check the file "Input-1_filter_P_prediction" is empty or not. Keep running until this file is not empty for two successive runs.
